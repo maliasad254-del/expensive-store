@@ -30,7 +30,10 @@ export function HomePage() {
   const bestSellers = products.filter((p) => p.is_best_seller);
   const newArrivals = products.filter((p) => p.is_new_arrival);
   const specialOffers = products.filter(
-    (p) => p.is_on_sale || (p.discount_price_pkr && p.discount_price_pkr < p.regular_price_pkr)
+    (p) =>
+      !p.is_best_seller &&
+      (p.is_on_sale ||
+        (p.discount_price_pkr && p.discount_price_pkr < p.regular_price_pkr))
   );
   const whyShop = (settings?.why_shop_items || '')
     .split('|')
