@@ -101,11 +101,18 @@ export function CartPage() {
               <span className="text-gray-500">Delivery Charges</span>
               <span className="font-medium text-navy">{deliveryFeePkr === 0 ? 'FREE' : formatPkr(deliveryFeePkr)}</span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">COD Handling Fee</span>
+              <span className="font-medium text-emerald-600">Rs. 0</span>
+            </div>
             <div className="border-t border-gray-200 pt-3 flex justify-between text-base font-bold text-navy">
               <span>Payable (COD)</span>
               <span>{formatPkr(finalTotalPkr)}</span>
             </div>
           </div>
+          <p className="text-xs text-emerald-700 text-center">
+            No extra COD fee or hidden charges.
+          </p>
           <Link
             to="/checkout"
             className="block w-full text-center px-6 py-3.5 rounded-xl bg-orange-accent hover:bg-orange-hover text-white font-semibold text-sm"
