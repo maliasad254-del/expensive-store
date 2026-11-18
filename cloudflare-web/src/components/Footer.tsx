@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Lock, MessageCircle } from 'lucide-react';
+import { MessageCircle, Phone, Mail } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { buildWhatsAppUrl } from '../lib/pkr';
 
@@ -54,7 +54,7 @@ export function Footer() {
         </div>
 
         <div>
-          <h4 className="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-3">Support & Admin</h4>
+          <h4 className="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-3">Contact & Support</h4>
           <div className="space-y-3">
             {waUrl && (
               <a
@@ -67,13 +67,18 @@ export function Footer() {
                 WhatsApp Support
               </a>
             )}
-            <Link
-              to="/admin"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-navy-light hover:bg-white/10 text-sm font-medium w-full justify-center border border-white/10"
-            >
-              <Lock className="w-4 h-4 text-orange-accent" />
-              Admin Dashboard
-            </Link>
+            {settings?.support_phone && (
+              <a href={`tel:${settings.support_phone}`} className="flex items-center gap-2 text-sm text-gray-200 hover:text-orange-accent">
+                <Phone className="w-4 h-4" />
+                {settings.support_phone}
+              </a>
+            )}
+            {settings?.support_email && (
+              <a href={`mailto:${settings.support_email}`} className="flex items-center gap-2 text-sm text-gray-200 hover:text-orange-accent break-all">
+                <Mail className="w-4 h-4" />
+                {settings.support_email}
+              </a>
+            )}
           </div>
         </div>
       </div>
