@@ -18,14 +18,14 @@ export function InfoPage({ type }: { type: InfoSlug }) {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const title = TITLES[type];
 
-  const faqItems = (settings?.faq_text || '').split(/\\r?\\n/).reduce<Array<{ question: string; answer: string }>>((items, line) => {
+  const faqItems = (settings?.faq_text || '').split(/\r?\n/).reduce<Array<{ question: string; answer: string }>>((items, line) => {
     const trimmed = line.trim();
     if (trimmed.startsWith('Q:')) {
       items.push({ question: trimmed.slice(2).trim(), answer: '' });
     } else if (trimmed.startsWith('A:') && items.length > 0) {
       items[items.length - 1].answer = trimmed.slice(2).trim();
     } else if (trimmed && items.length > 0) {
-      items[items.length - 1].answer += (items[items.length - 1].answer ? '\\n' : '') + trimmed;
+      items[items.length - 1].answer += (items[items.length - 1].answer ? '\n' : '') + trimmed;
     }
     return items;
   }, []);
