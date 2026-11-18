@@ -26,8 +26,30 @@ export function InfoPage({ type }: { type: InfoSlug }) {
         <h1 className="font-display text-3xl font-bold text-navy">{title}</h1>
 
         {type === 'about' && (
-          <div className="space-y-3 text-gray-600 text-sm leading-relaxed whitespace-pre-line">
-            <p>{settings?.about_us_text}</p>
+          <div className="space-y-6 text-sm leading-relaxed">
+            <p className="text-gray-600 whitespace-pre-line">
+              {settings?.about_us_text || 'Expensive Store is a Pakistani online shopping store offering carefully selected products for everyday needs.'}
+            </p>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl border border-gray-200 p-4">
+                <h3 className="font-semibold text-navy mb-1">Our Products</h3>
+                <p className="text-gray-600">Explore electronics, watches, and lifestyle essentials in one place.</p>
+              </div>
+              <div className="rounded-xl border border-gray-200 p-4">
+                <h3 className="font-semibold text-navy mb-1">Nationwide Delivery</h3>
+                <p className="text-gray-600">Shop from anywhere in Pakistan with Cash on Delivery.</p>
+              </div>
+              <div className="rounded-xl border border-gray-200 p-4">
+                <h3 className="font-semibold text-navy mb-1">Customer Focus</h3>
+                <p className="text-gray-600">We aim to make your online shopping experience simple and convenient.</p>
+              </div>
+              <div className="rounded-xl border border-gray-200 p-4">
+                <h3 className="font-semibold text-navy mb-1">WhatsApp Support</h3>
+                <p className="text-gray-600">Have a question? Reach out to us through WhatsApp.</p>
+              </div>
+            </div>
+
             {settings?.registration_details && (
               <p className="font-semibold text-navy">Registration: {settings.registration_details}</p>
             )}
