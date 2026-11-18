@@ -28,7 +28,12 @@ export function HomePage() {
 
   const featuredCategories = categories.filter((c) => c.is_featured === 1);
   const bestSellers = products.filter((p) => p.is_best_seller);
-  const newArrivals = products.filter((p) => p.is_new_arrival);
+  const newArrivals = products.filter(
+    (p) =>
+      p.is_new_arrival &&
+      !p.is_best_seller &&
+      !(p.is_on_sale || (p.discount_price_pkr && p.discount_price_pkr < p.regular_price_pkr))
+  );
   const specialOffers = products.filter(
     (p) =>
       !p.is_best_seller &&
