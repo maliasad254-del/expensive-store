@@ -35,28 +35,49 @@ export function InfoPage({ type }: { type: InfoSlug }) {
         )}
 
         {type === 'contact' && (
-          <div className="space-y-3 text-sm text-gray-700">
-            {!settings?.support_phone && !settings?.support_email && !settings?.whatsapp_number && !settings?.store_address ? (
-              <p className="text-gray-500">
-                Business contact details are managed in Admin Dashboard → Settings.
-              </p>
-            ) : (
-              <>
-                {settings?.support_phone && <p><strong>Phone:</strong> {settings.support_phone}</p>}
-                {settings?.support_email && <p><strong>Email:</strong> {settings.support_email}</p>}
-                {settings?.store_address && <p><strong>Address:</strong> {settings.store_address}</p>}
-                {waUrl && (
-                  <a
-                    href={waUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-block px-5 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold"
-                  >
-                    Message on WhatsApp ({settings?.whatsapp_number})
+          <div className="space-y-5 text-sm text-gray-700">
+            <p className="text-gray-600 leading-relaxed">
+              Have a question about an order or product? Contact our support team.
+              We're happy to help you.
+            </p>
+
+            <div className="space-y-4">
+              {settings?.support_phone && (
+                <div className="rounded-xl border border-gray-200 p-4">
+                  <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-1">Phone Support</p>
+                  <a href={`tel:${settings.support_phone}`} className="font-medium text-navy hover:text-orange-accent">
+                    {settings.support_phone}
                   </a>
-                )}
-              </>
-            )}
+                </div>
+              )}
+
+              {settings?.support_email && (
+                <div className="rounded-xl border border-gray-200 p-4">
+                  <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-1">Email Support</p>
+                  <a href={`mailto:${settings.support_email}`} className="font-medium text-navy hover:text-orange-accent break-all">
+                    {settings.support_email}
+                  </a>
+                </div>
+              )}
+
+              {settings?.store_address && (
+                <div className="rounded-xl border border-gray-200 p-4">
+                  <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-1">Address</p>
+                  <p>{settings.store_address}</p>
+                </div>
+              )}
+
+              {waUrl && (
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex w-full sm:w-auto items-center justify-center px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
+                >
+                  Contact us on WhatsApp
+                </a>
+              )}
+            </div>
           </div>
         )}
 
