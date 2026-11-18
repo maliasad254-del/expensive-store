@@ -301,8 +301,9 @@ export function ProductDetailPage() {
           <div className="rounded-xl bg-orange-soft border border-orange-accent/25 p-3.5 flex items-center gap-3 text-sm text-navy">
             <Truck className="w-5 h-5 text-orange-accent shrink-0" />
             <span>
-              Cash on Delivery Only • Free delivery on orders above{' '}
-              {formatPkr(settings?.free_delivery_threshold_pkr ?? 5000)}
+              <span className="block font-semibold">Delivery: {formatPkr(settings?.delivery_charge_pkr ?? 250)}</span>
+              <span className="block">Free delivery on orders of {formatPkr(settings?.free_delivery_threshold_pkr ?? 5000)} or more.</span>
+              <span className="block font-semibold text-green-700">Cash on Delivery • No Extra COD Charges</span>
             </span>
           </div>
 
