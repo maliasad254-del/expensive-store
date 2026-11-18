@@ -926,7 +926,10 @@ export function AdminDashboardPage() {
               <input placeholder="Store Address" value={settingsDraft.store_address} onChange={(e) => setSettingsDraft({ ...settingsDraft, store_address: e.target.value })} className="rounded-xl border px-3 py-2" />
             </div>
             <textarea rows={2} placeholder="About Us" value={settingsDraft.about_us_text} onChange={(e) => setSettingsDraft({ ...settingsDraft, about_us_text: e.target.value })} className="w-full rounded-xl border px-3 py-2 text-sm" />
-            <textarea rows={2} placeholder="FAQ" value={settingsDraft.faq_text} onChange={(e) => setSettingsDraft({ ...settingsDraft, faq_text: e.target.value })} className="w-full rounded-xl border px-3 py-2 text-sm" />
+            <div className="space-y-2">
+              <textarea rows={8} placeholder={"Q: Order kaise place karein?\nA: Website par product select karein aur checkout form complete karein.\n\nQ: Kya Cash on Delivery available hai?\nA: Ji haan, Pakistan bhar mein Cash on Delivery available hai."} value={settingsDraft.faq_text} onChange={(e) => setSettingsDraft({ ...settingsDraft, faq_text: e.target.value })} className="w-full rounded-xl border px-3 py-2 text-sm" />
+              <p className="text-xs text-gray-500">Har sawal Q: se aur uska jawab A: se shuru karein. Har sawal aur jawab alag line mein likhein.</p>
+            </div>
             <textarea rows={2} placeholder="Privacy Policy" value={settingsDraft.privacy_policy_text} onChange={(e) => setSettingsDraft({ ...settingsDraft, privacy_policy_text: e.target.value })} className="w-full rounded-xl border px-3 py-2 text-sm" />
             <textarea rows={2} placeholder="Return & Refund Policy" value={settingsDraft.return_policy_text} onChange={(e) => setSettingsDraft({ ...settingsDraft, return_policy_text: e.target.value })} className="w-full rounded-xl border px-3 py-2 text-sm" />
             <textarea rows={2} placeholder="Shipping Policy" value={settingsDraft.shipping_policy_text} onChange={(e) => setSettingsDraft({ ...settingsDraft, shipping_policy_text: e.target.value })} className="w-full rounded-xl border px-3 py-2 text-sm" />

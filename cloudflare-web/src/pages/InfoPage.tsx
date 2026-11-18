@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { buildWhatsAppUrl } from '../lib/pkr';
 
@@ -14,7 +15,20 @@ const TITLES: Record<InfoSlug, string> = {
 
 export function InfoPage({ type }: { type: InfoSlug }) {
   const { settings } = useStore();
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const title = TITLES[type];
+
+  const faqItems = (settings?.faq_text || '').split(/\\r?\\n/).reduce<Array<{ question: string; answer: string }>>((items, line) => {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('Q:')) {
+      items.push({ question: trimmed.slice(2).trim(), answer: '' });
+    } else if (trimmed.startsWith('A:') && items.length > 0) {
+      items[items.length - 1].answer = trimmed.slice(2).trim();
+    } else if (trimmed && items.length > 0) {
+      items[items.length - 1].answer += (items[items.length - 1].answer ? '\\n' : '') + trimmed;
+    }
+    return items;
+  }, []);
 
   const waUrl = settings?.whatsapp_number
     ? buildWhatsAppUrl(settings.whatsapp_number, `Assalam-o-Alaikum ${settings.store_name}, I need support.`)
@@ -103,7 +117,32 @@ export function InfoPage({ type }: { type: InfoSlug }) {
           </div>
         )}
 
-        {type === 'faq' && <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">{settings?.faq_text}</p>}
+        {type === 'faq' && (
+          <div className="space-y-3">
+            {faqItems.length > 0 ? faqItems.map((item, index) => (
+              <div key={index} className="rounded-xl border border-gray-200 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
+                  aria-expanded={openFaqIndex === index}
+                  className="w-full flex items-center justify-between gap-4 p-4 text-left font-semibold text-navy hover:bg-gray-50"
+                >
+                  <span>{item.question}</span>
+                  <span className="text-xl text-orange-accent">{openFaqIndex === index ? '−' : '+'}</span>
+                </button>
+                {openFaqIndex === index && (
+                  <div className="px-4 pb-4 text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                    {item.answer}
+                  </div>
+                )}
+              </div>
+            )) : (
+              <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">
+                {settings?.faq_text || 'Frequently asked questions will be available here soon.'}
+              </p>
+            )}
+          </div>
+        )}
         {type === 'privacy' && <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">{settings?.privacy_policy_text}</p>}
         {type === 'returns' && <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">{settings?.return_policy_text}</p>}
         {type === 'shipping' && <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">{settings?.shipping_policy_text}</p>}
