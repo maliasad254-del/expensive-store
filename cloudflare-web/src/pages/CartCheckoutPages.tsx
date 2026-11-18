@@ -271,12 +271,19 @@ export function CheckoutPage() {
               <span className="text-gray-500">Delivery</span>
               <span>{deliveryFeePkr === 0 ? 'FREE' : formatPkr(deliveryFeePkr)}</span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">COD Handling Fee</span>
+              <span className="font-medium text-emerald-600">Rs. 0</span>
+            </div>
             <div className="flex justify-between text-base font-bold text-navy pt-2 border-t border-gray-200">
               <span>Payable (COD)</span>
               <span>{formatPkr(finalTotalPkr)}</span>
             </div>
           </div>
 
+          <p className="text-xs text-emerald-700 text-center">
+            No extra COD fee or hidden charges.
+          </p>
           <button
             type="submit"
             disabled={submitting}
