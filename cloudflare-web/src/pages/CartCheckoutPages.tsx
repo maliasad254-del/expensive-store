@@ -335,6 +335,20 @@ export function OrderConfirmationPage() {
               </div>
             ))}
           </div>
+          <div className="border-t border-gray-200 pt-3 space-y-2">
+            <div className="flex justify-between">
+              <span className="text-gray-500">Subtotal</span>
+              <span>{formatPkr(order.subtotal_pkr)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Delivery Charges</span>
+              <span>{order.delivery_fee_pkr === 0 ? 'FREE' : formatPkr(order.delivery_fee_pkr)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">COD Handling Fee</span>
+              <span className="font-medium text-emerald-600">Rs. 0</span>
+            </div>
+          </div>
           <div className="border-t border-gray-200 pt-3 flex justify-between font-bold text-base text-navy">
             <span>Total Payable (COD)</span>
             <span>{formatPkr(order.total_pkr)}</span>
