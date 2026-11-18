@@ -190,7 +190,7 @@ export function ProductDetailPage() {
   const { slugOrId } = useParams();
   const navigate = useNavigate();
   const { settings } = useStore();
-  const { addToCart } = useCart();
+  const { addToCart, clearCart } = useCart();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [related, setRelated] = useState<Product[]>([]);
@@ -343,6 +343,7 @@ export function ProductDetailPage() {
               type="button"
               disabled={!inStock}
               onClick={() => {
+                clearCart();
                 addToCart(product.id, quantity);
                 navigate('/checkout');
               }}
