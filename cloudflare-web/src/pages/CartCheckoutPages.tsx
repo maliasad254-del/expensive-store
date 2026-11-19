@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { CheckCircle2, MessageCircle, Minus, Plus, Search, ShoppingCart, Trash2, Truck } from 'lucide-react';
+import { CheckCircle2, Copy, MessageCircle, Minus, Plus, Search, ShoppingCart, Trash2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useStore } from '../context/StoreContext';
 import { api } from '../lib/api';
@@ -429,21 +429,44 @@ export function TrackOrderPage() {
   const [tracking, setTracking] = useState<TrackedOrder | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const steps: OrderStatus[] = [
+    'PENDING',
+    'CONFIRMED',
+    'PROCESSING',
+    'SHIPPED',
+    'DELIVERED'
+  ];
 
   const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setTracking(null);
+    setCopied(false);
     setLoading(true);
     try {
-      const res = await api.trackOrder(orderNumber, mobileNumber);
+      const res = await api.trackOrder(orderNumber.trim(), mobileNumber.trim());
       setTracking(res.tracking);
     } catch (err) {
-      setTracking(null);
       setError(err instanceof Error ? err.message : 'Unable to track order.');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleCopyOrderNumber = async () => {
+    if (!tracking) return;
+    try {
+      await navigator.clipboard.writeText(tracking.order_number);
+      setCopied(true);
+    } catch {
+      setError('Order ID copy nahi ho saka. Aap ise manually copy kar sakte hain.');
+    }
+  };
+
+  const formatDate = (timestamp: number) =>
+    new Date(timestamp).toLocaleString();
 
   return (
     <div className="max-w-xl mx-auto px-4 py-10 space-y-6">
@@ -473,7 +496,7 @@ export function TrackOrderPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-orange-accent hover:bg-orange-hover text-white font-semibold text-sm"
+            className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-orange-accent hover:bg-orange-hover text-white font-semibold text-sm disabled:opacity-60"
           >
             <Search className="w-4 h-4" />
             {loading ? 'Checking...' : 'Track Order'}
@@ -486,28 +509,99 @@ export function TrackOrderPage() {
       )}
 
       {tracking && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="font-display font-bold text-lg text-navy">{tracking.order_number}</span>
-            <span className="px-3 py-1 rounded-full bg-orange-soft text-orange-accent text-xs font-bold">
-              {tracking.status}
-            </span>
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs text-gray-500 mb-1">Your Order ID</p>
+              <span className="font-display font-bold text-lg text-navy break-all">
+                {tracking.order_number}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleCopyOrderNumber}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-navy hover:bg-gray-50"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              {copied ? 'Copied' : 'Copy'}
+            </button>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
+
+          <div className="rounded-xl bg-orange-soft p-4">
+            <p className="text-xs text-gray-600 mb-1">Current Order Status</p>
+            <p className="font-display text-xl font-bold text-orange-accent">
+              {tracking.status}
+            </p>
+            <p className="text-xs text-gray-600 mt-1">
+              Last updated: {formatDate(tracking.updated_at)}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-sm text-gray-600">
             <div>City: <strong className="text-navy">{tracking.city}</strong></div>
             <div>Items: <strong className="text-navy">{tracking.item_count}</strong></div>
             <div>Payment: <strong className="text-navy">{tracking.payment_method}</strong></div>
             <div>Total: <strong className="text-navy">{formatPkr(tracking.total_pkr)}</strong></div>
           </div>
+
+          {tracking.status === 'CANCELLED' ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-1">
+              <p className="font-bold text-red-700">Order Cancelled</p>
+              <p className="text-sm text-red-600">
+                Yeh order cancel kar diya gaya hai. Neeche cancellation ki details dekhein.
+              </p>
+            </div>
+          ) : (
+            <div className="border-t border-gray-200 pt-5 space-y-4">
+              <h2 className="text-sm font-semibold text-navy">Delivery Progress</h2>
+              <div className="space-y-4">
+                {steps.map((step, index) => {
+                  const currentIndex = steps.indexOf(tracking.status);
+                  const reached = currentIndex >= index;
+                  const event = tracking.history.find((h) => h.status === step);
+
+                  return (
+                    <div key={step} className="flex items-start gap-3">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                        reached ? 'bg-orange-accent text-white' : 'bg-gray-100 text-gray-400'
+                      }`}>
+                        {reached ? (
+                          <CheckCircle2 className="w-4 h-4" />
+                        ) : (
+                          <span className="text-xs font-bold">{index + 1}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-semibold ${reached ? 'text-navy' : 'text-gray-400'}`}>
+                          {step}
+                        </p>
+                        {event ? (
+                          <>
+                            <p className="text-xs text-gray-500">{event.note}</p>
+                            <p className="text-[11px] text-gray-400 mt-1">{formatDate(event.created_at)}</p>
+                          </>
+                        ) : (
+                          <p className="text-xs text-gray-400">
+                            {reached ? 'Status history update available nahi' : 'Awaiting update'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="border-t border-gray-200 pt-4 space-y-3">
-            <h2 className="text-sm font-semibold text-navy">Status Timeline</h2>
+            <h2 className="text-sm font-semibold text-navy">Complete Status History</h2>
             {tracking.history.map((h, i) => (
-              <div key={i} className="flex items-start gap-3 text-sm">
-                <Truck className="w-4 h-4 text-orange-accent mt-0.5 shrink-0" />
-                <div>
+              <div key={`${h.status}-${h.created_at}-${i}`} className="flex items-start gap-3 text-sm">
+                <div className="w-2 h-2 rounded-full bg-orange-accent mt-1.5 shrink-0" />
+                <div className="min-w-0">
                   <div className="font-semibold text-navy">{h.status}</div>
                   <div className="text-gray-500 text-xs">{h.note}</div>
-                  <div className="text-gray-400 text-[11px]">{new Date(h.created_at).toLocaleString()}</div>
+                  <div className="text-gray-400 text-[11px]">{formatDate(h.created_at)}</div>
                 </div>
               </div>
             ))}
