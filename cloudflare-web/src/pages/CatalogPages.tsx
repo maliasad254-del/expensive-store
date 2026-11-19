@@ -304,6 +304,7 @@ export function ProductDetailPage() {
               <span className="block font-semibold">Delivery: {formatPkr(settings?.delivery_charge_pkr ?? 250)}</span>
               <span className="block">Free delivery on orders of {formatPkr(settings?.free_delivery_threshold_pkr ?? 5000)} or more.</span>
               <span className="block font-semibold text-green-700">Cash on Delivery • No Extra COD Charges</span>
+              <span className="block">Estimated Delivery: 3–7 Days</span>
             </span>
           </div>
 
