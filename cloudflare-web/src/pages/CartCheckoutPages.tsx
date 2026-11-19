@@ -9,7 +9,19 @@ import { OrderItemSnapshot, OrderRecord, TrackedOrder } from '../types/store';
 
 export function CartPage() {
   const { settings } = useStore();
-  const { hydratedItems, subtotalPkr, totalSavingsPkr, deliveryFeePkr, finalTotalPkr, updateQuantity, removeItem } = useCart();
+  const {
+    hydratedItems,
+    selectedItems,
+    selectedProductIds,
+    selectedSubtotalPkr,
+    selectedSavingsPkr,
+    selectedDeliveryFeePkr,
+    selectedFinalTotalPkr,
+    toggleItemSelection,
+    selectAllItems,
+    updateQuantity,
+    removeItem
+  } = useCart();
 
   if (hydratedItems.length === 0) {
     return (
@@ -27,7 +39,7 @@ export function CartPage() {
   }
 
   const freeThreshold = settings?.free_delivery_threshold_pkr ?? 5000;
-  const remainingForFree = Math.max(0, freeThreshold - subtotalPkr);
+  const remainingForFree = Math.max(0, freeThreshold - selectedSubtotalPkr);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
@@ -41,8 +53,27 @@ export function CartPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-between">
+            <label className="flex items-center gap-2 text-sm font-semibold text-navy">
+              <input
+                type="checkbox"
+                checked={hydratedItems.length > 0 && selectedItems.length === hydratedItems.length}
+                onChange={(e) => selectAllItems(e.target.checked)}
+                className="h-4 w-4 accent-orange-500"
+              />
+              Select All
+            </label>
+            <span className="text-sm text-gray-500">{selectedItems.length} of {hydratedItems.length} selected</span>
+          </div>
           {hydratedItems.map((item) => (
             <div key={item.product.id} className="bg-white rounded-2xl border border-gray-200 p-4 flex gap-4 items-center">
+              <input
+                type="checkbox"
+                checked={selectedProductIds.includes(item.product.id)}
+                onChange={() => toggleItemSelection(item.product.id)}
+                aria-label={`Select ${item.product.name}`}
+                className="h-4 w-4 shrink-0 accent-orange-500"
+              />
               <img
                 src={item.product.images[0] || '/images/img_cat_electronics.jpg'}
                 alt={item.product.name}
@@ -89,17 +120,17 @@ export function CartPage() {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-500">Subtotal</span>
-              <span className="font-medium text-navy">{formatPkr(subtotalPkr)}</span>
+              <span className="font-medium text-navy">{formatPkr(selectedSubtotalPkr)}</span>
             </div>
-            {totalSavingsPkr > 0 && (
+            {selectedSavingsPkr > 0 && (
               <div className="flex justify-between text-emerald-600">
                 <span>Discounts</span>
-                <span>-{formatPkr(totalSavingsPkr)}</span>
+                <span>-{formatPkr(selectedSavingsPkr)}</span>
               </div>
             )}
             <div className="flex justify-between">
               <span className="text-gray-500">Delivery Charges</span>
-              <span className="font-medium text-navy">{deliveryFeePkr === 0 ? 'FREE' : formatPkr(deliveryFeePkr)}</span>
+              <span className="font-medium text-navy">{selectedDeliveryFeePkr === 0 ? 'FREE' : formatPkr(selectedDeliveryFeePkr)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">COD Handling Fee</span>
@@ -107,18 +138,24 @@ export function CartPage() {
             </div>
             <div className="border-t border-gray-200 pt-3 flex justify-between text-base font-bold text-navy">
               <span>Payable (COD)</span>
-              <span>{formatPkr(finalTotalPkr)}</span>
+              <span>{formatPkr(selectedFinalTotalPkr)}</span>
             </div>
           </div>
           <p className="text-xs text-emerald-700 text-center">
             No extra COD fee or hidden charges.
           </p>
-          <Link
-            to="/checkout"
-            className="block w-full text-center px-6 py-3.5 rounded-xl bg-orange-accent hover:bg-orange-hover text-white font-semibold text-sm"
-          >
-            Proceed to Checkout
-          </Link>
+          {selectedItems.length > 0 ? (
+            <Link
+              to="/checkout"
+              className="block w-full text-center px-6 py-3.5 rounded-xl bg-orange-accent hover:bg-orange-hover text-white font-semibold text-sm"
+            >
+              Proceed to Checkout
+            </Link>
+          ) : (
+            <p className="text-sm text-center text-red-600">
+              Checkout ke liye kam az kam aik product select karein.
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -127,7 +164,13 @@ export function CartPage() {
 
 export function CheckoutPage() {
   const navigate = useNavigate();
-  const { hydratedItems, subtotalPkr, deliveryFeePkr, finalTotalPkr, clearCart } = useCart();
+  const {
+    selectedItems,
+    selectedSubtotalPkr,
+    selectedDeliveryFeePkr,
+    selectedFinalTotalPkr,
+    removeSelectedItems
+  } = useCart();
   const { refreshStorefront } = useStore();
   const [customerName, setCustomerName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
@@ -137,14 +180,15 @@ export function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const idempotencyKey = useMemo(() => crypto.randomUUID(), [hydratedItems.length, finalTotalPkr]);
+  const idempotencyKey = useMemo(() => crypto.randomUUID(), [selectedItems.length, selectedFinalTotalPkr]);
 
-  if (hydratedItems.length === 0) {
+  if (selectedItems.length === 0) {
     return (
       <div className="max-w-xl mx-auto px-4 py-16 text-center space-y-4">
-        <h1 className="font-display text-2xl font-bold text-navy">Your cart is empty</h1>
-        <Link to="/shop" className="inline-block px-6 py-3 rounded-xl bg-navy text-white font-semibold text-sm">
-          Return to Shop
+        <h1 className="font-display text-2xl font-bold text-navy">No products selected</h1>
+        <p className="text-sm text-gray-500">Please select at least one product from your cart.</p>
+        <Link to="/cart" className="inline-block px-6 py-3 rounded-xl bg-navy text-white font-semibold text-sm">
+          Return to Cart
         </Link>
       </div>
     );
@@ -168,9 +212,9 @@ export function CheckoutPage() {
         deliveryAddress,
         orderNotes,
         idempotencyKey,
-        items: hydratedItems.map((i) => ({ productId: i.product.id, quantity: i.quantity }))
+        items: selectedItems.map((i) => ({ productId: i.product.id, quantity: i.quantity }))
       });
-      clearCart();
+      removeSelectedItems();
       await refreshStorefront();
       navigate(`/order-confirmation/${encodeURIComponent(res.order.order_number)}`, {
         state: { order: res.order, items: res.items }
@@ -255,7 +299,7 @@ export function CheckoutPage() {
         <div className="bg-white rounded-2xl border border-gray-200 p-6 h-fit space-y-4">
           <h2 className="font-display text-xl font-bold text-navy">Order Summary</h2>
           <div className="space-y-2 text-sm border-b border-gray-200 pb-3">
-            {hydratedItems.map((item) => (
+            {selectedItems.map((item) => (
               <div key={item.product.id} className="flex justify-between gap-2">
                 <span className="text-gray-600">{item.product.name} × {item.quantity}</span>
                 <span className="font-medium text-navy shrink-0">{formatPkr(item.lineTotalPkr)}</span>
@@ -265,11 +309,11 @@ export function CheckoutPage() {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-500">Subtotal</span>
-              <span>{formatPkr(subtotalPkr)}</span>
+              <span>{formatPkr(selectedSubtotalPkr)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Delivery</span>
-              <span>{deliveryFeePkr === 0 ? 'FREE' : formatPkr(deliveryFeePkr)}</span>
+              <span>{selectedDeliveryFeePkr === 0 ? 'FREE' : formatPkr(selectedDeliveryFeePkr)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">COD Handling Fee</span>
@@ -277,7 +321,7 @@ export function CheckoutPage() {
             </div>
             <div className="flex justify-between text-base font-bold text-navy pt-2 border-t border-gray-200">
               <span>Payable (COD)</span>
-              <span>{formatPkr(finalTotalPkr)}</span>
+              <span>{formatPkr(selectedFinalTotalPkr)}</span>
             </div>
           </div>
 

@@ -4,6 +4,7 @@ import { CartItem, Product } from '../types/store';
 import { useStore } from './StoreContext';
 
 const CART_STORAGE_KEY = 'expensive_store_cart_v1';
+const SELECTED_CART_STORAGE_KEY = 'expensive_store_selected_v1';
 
 interface HydratedCartItem {
   product: Product;
@@ -16,6 +17,14 @@ interface HydratedCartItem {
 interface CartContextValue {
   items: CartItem[];
   hydratedItems: HydratedCartItem[];
+  selectedItems: HydratedCartItem[];
+  selectedProductIds: string[];
+  selectedSubtotalPkr: number;
+  selectedSavingsPkr: number;
+  selectedDeliveryFeePkr: number;
+  selectedFinalTotalPkr: number;
+  toggleItemSelection: (productId: string) => void;
+  selectAllItems: (selected: boolean) => void;
   itemCount: number;
   subtotalPkr: number;
   totalSavingsPkr: number;
@@ -24,6 +33,7 @@ interface CartContextValue {
   addToCart: (productId: string, quantity?: number) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   removeItem: (productId: string) => void;
+  removeSelectedItems: () => void;
   clearCart: () => void;
 }
 
@@ -40,18 +50,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   });
 
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(SELECTED_CART_STORAGE_KEY);
+      if (raw) return JSON.parse(raw) as string[];
+      const cart = localStorage.getItem(CART_STORAGE_KEY);
+      return cart ? (JSON.parse(cart) as CartItem[]).map((item) => item.productId) : [];
+    } catch {
+      return [];
+    }
+  });
+
   useEffect(() => {
     try {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+      localStorage.setItem(SELECTED_CART_STORAGE_KEY, JSON.stringify(selectedProductIds));
     } catch {
       // Ignore storage quota issues
     }
-  }, [items]);
+  }, [items, selectedProductIds]);
 
   const addToCart = (productId: string, quantity = 1) => {
     const product = products.find((p) => p.id === productId);
     if (!product || !product.is_available || product.stock_quantity <= 0) return;
 
+    setSelectedProductIds((prev) => prev.includes(productId) ? prev : [...prev, productId]);
     setItems((prev) => {
       const existing = prev.find((i) => i.productId === productId);
       const nextQty = Math.min(
@@ -81,9 +104,29 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const removeItem = (productId: string) => {
     setItems((prev) => prev.filter((i) => i.productId !== productId));
+    setSelectedProductIds((prev) => prev.filter((id) => id !== productId));
   };
 
-  const clearCart = () => setItems([]);
+  const toggleItemSelection = (productId: string) => {
+    setSelectedProductIds((prev) => prev.includes(productId)
+      ? prev.filter((id) => id !== productId)
+      : [...prev, productId]);
+  };
+
+  const selectAllItems = (selected: boolean) => {
+    setSelectedProductIds(selected ? items.map((item) => item.productId) : []);
+  };
+
+  const removeSelectedItems = () => {
+    const selected = new Set(selectedProductIds);
+    setItems((prev) => prev.filter((item) => !selected.has(item.productId)));
+    setSelectedProductIds((prev) => prev.filter((id) => !selected.has(id)));
+  };
+
+  const clearCart = () => {
+    setItems([]);
+    setSelectedProductIds([]);
+  };
 
   const summary = useMemo(() => {
     const productMap = new Map(products.map((p) => [p.id, p]));
@@ -102,6 +145,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       });
     }
 
+    const selectedItems = hydrated.filter((item) => selectedProductIds.includes(item.product.id));
+    const selectedSubtotalPkr = selectedItems.reduce((s, i) => s + i.lineTotalPkr, 0);
+    const selectedSavingsPkr = selectedItems.reduce((s, i) => s + i.savingsPkr, 0);
+    const selectedDeliveryFeePkr =
+      selectedItems.length === 0 || selectedSubtotalPkr >= (settings?.free_delivery_threshold_pkr ?? 5000)
+        ? 0
+        : (settings?.delivery_charge_pkr ?? 250);
+    const selectedFinalTotalPkr = selectedSubtotalPkr + selectedDeliveryFeePkr;
+
     const subtotalPkr = hydrated.reduce((s, i) => s + i.lineTotalPkr, 0);
     const totalSavingsPkr = hydrated.reduce((s, i) => s + i.savingsPkr, 0);
     const deliveryCharge = settings?.delivery_charge_pkr ?? 250;
@@ -113,22 +165,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     return {
       hydratedItems: hydrated,
+      selectedItems,
+      selectedSubtotalPkr,
+      selectedSavingsPkr,
+      selectedDeliveryFeePkr,
+      selectedFinalTotalPkr,
       itemCount,
       subtotalPkr,
       totalSavingsPkr,
       deliveryFeePkr,
       finalTotalPkr
     };
-  }, [items, products, settings]);
+  }, [items, products, settings, selectedProductIds]);
 
   return (
     <CartContext.Provider
       value={{
         items,
         ...summary,
+        selectedProductIds,
+        toggleItemSelection,
+        selectAllItems,
         addToCart,
         updateQuantity,
         removeItem,
+        removeSelectedItems,
         clearCart
       }}
     >
