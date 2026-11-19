@@ -365,37 +365,54 @@ export async function handleAdminUpdateOrderStatus(
 
   if (!current) return errorResponse('Order not found.', 404);
 
+  if (current.status === newStatus) {
+    return jsonResponse({ ok: true, status: newStatus, unchanged: true });
+  }
+
+  if (current.status === 'CANCELLED' || current.status === 'DELIVERED') {
+    return errorResponse(`Order is already ${current.status} and cannot be changed.`, 409);
+  }
+
   const now = Date.now();
+
   const statements: D1PreparedStatement[] = [
-    env.DB.prepare('UPDATE orders SET status = ?, updated_at = ? WHERE order_number = ?').bind(
-      newStatus,
-      now,
-      orderNumber
-    ),
     env.DB.prepare(
-      'INSERT INTO order_status_history (order_number, status, note, created_at) VALUES (?, ?, ?, ?)'
+      'UPDATE orders SET status = ?, updated_at = ? WHERE order_number = ? AND status = ?'
+    ).bind(newStatus, now, orderNumber, current.status),
+
+    env.DB.prepare(
+      `INSERT INTO order_status_history (order_number, status, note, created_at)
+       SELECT ?, ?, ?, ? WHERE changes() = 1`
     ).bind(orderNumber, newStatus, note, now)
   ];
 
-  // Restore stock if cancelling an order that was not already cancelled
-  if (current.status !== 'CANCELLED' && newStatus === 'CANCELLED') {
-    const { results: items } = await env.DB.prepare(
-      'SELECT product_id, quantity FROM order_items WHERE order_number = ?'
-    )
-      .bind(orderNumber)
-      .all<{ product_id: string; quantity: number }>();
-
-    for (const item of items) {
-      statements.push(
-        env.DB.prepare('UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?').bind(
-          item.quantity,
-          item.product_id
-        )
-      );
-    }
+  if (newStatus === 'CANCELLED') {
+    statements.push(
+      env.DB.prepare(
+        `UPDATE products
+         SET stock_quantity = stock_quantity + (
+           SELECT COALESCE(SUM(quantity), 0)
+           FROM order_items
+           WHERE order_items.product_id = products.id
+             AND order_items.order_number = ?
+         )
+         WHERE id IN (
+           SELECT product_id FROM order_items WHERE order_number = ?
+         )
+         AND changes() = 1`
+      ).bind(orderNumber, orderNumber)
+    );
   }
 
-  await env.DB.batch(statements);
+  const results = await env.DB.batch(statements);
+
+  if (results[0].meta.changes !== 1) {
+    return errorResponse(
+      'Order status was changed by another request. Please refresh and try again.',
+      409
+    );
+  }
+
   return jsonResponse({ ok: true, status: newStatus });
 }
 

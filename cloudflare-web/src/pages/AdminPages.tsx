@@ -164,6 +164,8 @@ export function AdminDashboardPage() {
     items: OrderItemSnapshot[];
   } | null>(null);
   const [statusNote, setStatusNote] = useState('');
+  const [updatingOrderStatus, setUpdatingOrderStatus] = useState(false);
+  const [orderStatusNotice, setOrderStatusNotice] = useState<string | null>(null);
 
   // Product Form
   const [editingProd, setEditingProd] = useState<Partial<Product> | null>(null);
@@ -627,19 +629,35 @@ export function AdminDashboardPage() {
                 onChange={(e) => setStatusNote(e.target.value)}
                 className="w-full rounded-xl border px-3 py-2 text-sm"
               />
+              {orderStatusNotice && (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-navy">
+                  {orderStatusNotice}
+                </div>
+              )}
               <div className="flex flex-wrap gap-2">
                 {ORDER_STATUSES.map((st) => (
                   <button
                     key={st}
                     type="button"
+                    disabled={updatingOrderStatus || selectedOrder.order.status === st || ['CANCELLED', 'DELIVERED'].includes(selectedOrder.order.status)}
                     onClick={async () => {
-                      await api.updateOrderStatus(selectedOrder.order.order_number, st, statusNote);
-                      setStatusNote('');
-                      await loadAdminData();
-                      const detail = await api.getAdminOrder(selectedOrder.order.order_number);
-                      setSelectedOrder({ order: detail.order, items: detail.items });
+                      if (updatingOrderStatus || selectedOrder.order.status === st) return;
+                      setUpdatingOrderStatus(true);
+                      setOrderStatusNotice(null);
+                      try {
+                        await api.updateOrderStatus(selectedOrder.order.order_number, st, statusNote);
+                        setStatusNote('');
+                        await loadAdminData();
+                        const detail = await api.getAdminOrder(selectedOrder.order.order_number);
+                        setSelectedOrder({ order: detail.order, items: detail.items });
+                        setOrderStatusNotice(`Order status successfully updated to ${detail.order.status}.`);
+                      } catch (err) {
+                        setOrderStatusNotice(err instanceof Error ? err.message : 'Status update failed. Please try again.');
+                      } finally {
+                        setUpdatingOrderStatus(false);
+                      }
                     }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed ${
                       selectedOrder.order.status === st
                         ? 'bg-navy text-white'
                         : st === 'CANCELLED'

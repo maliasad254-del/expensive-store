@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { CheckCircle2, Copy, MessageCircle, Minus, Plus, Search, ShoppingCart, Trash2 } from 'lucide-react';
+import { CheckCircle2, Copy, MessageCircle, Minus, Plus, Search, ShoppingCart, Trash2, Truck } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useStore } from '../context/StoreContext';
 import { api } from '../lib/api';
 import { buildWhatsAppUrl, formatPkr, normalizePakistanMobileClient } from '../lib/pkr';
-import { OrderItemSnapshot, OrderRecord, TrackedOrder } from '../types/store';
+import { OrderItemSnapshot, OrderRecord, OrderStatus, TrackedOrder } from '../types/store';
 
 export function CartPage() {
   const { settings } = useStore();
