@@ -104,6 +104,12 @@ export const api = {
       body: JSON.stringify({ orderNumber, mobileNumber })
     }),
 
+  cancelOrder: (orderNumber: string, mobileNumber: string) =>
+    apiFetch<{ ok: boolean; status: OrderStatus }>('/api/orders/cancel', {
+      method: 'POST',
+      body: JSON.stringify({ orderNumber, mobileNumber })
+    }),
+
   subscribePriceDrop: (productId: string, email: string) =>
     apiFetch<{
       ok: boolean;

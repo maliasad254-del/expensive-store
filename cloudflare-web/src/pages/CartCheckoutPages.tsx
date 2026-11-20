@@ -430,6 +430,8 @@ export function TrackOrderPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelMessage, setCancelMessage] = useState<string | null>(null);
 
   const steps: OrderStatus[] = [
     'PENDING',
@@ -444,6 +446,7 @@ export function TrackOrderPage() {
     setError(null);
     setTracking(null);
     setCopied(false);
+    setCancelMessage(null);
     setLoading(true);
     try {
       const res = await api.trackOrder(orderNumber.trim(), mobileNumber.trim());
@@ -452,6 +455,47 @@ export function TrackOrderPage() {
       setError(err instanceof Error ? err.message : 'Unable to track order.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!tracking || cancelling) return;
+    const confirmed = window.confirm(
+      'Kya aap waqai yeh order cancel karna chahte hain? Is action ko undo nahi kiya ja sakta.'
+    );
+    if (!confirmed) return;
+
+    setError(null);
+    setCancelMessage(null);
+    setCancelling(true);
+    try {
+      await api.cancelOrder(tracking.order_number, mobileNumber.trim());
+      const cancelledAt = Date.now();
+      setTracking((current) => current ? {
+        ...current,
+        status: 'CANCELLED',
+        updated_at: cancelledAt,
+        history: [
+          ...current.history,
+          {
+            status: 'CANCELLED',
+            note: 'Customer requested order cancellation.',
+            created_at: cancelledAt
+          }
+        ]
+      } : current);
+      setCancelMessage('Aap ka order successfully cancel ho gaya hai.');
+
+      try {
+        const refreshed = await api.trackOrder(orderNumber.trim(), mobileNumber.trim());
+        setTracking(refreshed.tracking);
+      } catch {
+        // Cancellation is already confirmed; keep the local cancelled state.
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Order cancel nahi ho saka. Dobara try karein.');
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -543,6 +587,28 @@ export function TrackOrderPage() {
             <div>Payment: <strong className="text-navy">{tracking.payment_method}</strong></div>
             <div>Total: <strong className="text-navy">{formatPkr(tracking.total_pkr)}</strong></div>
           </div>
+
+          {cancelMessage && (
+            <div className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+              {cancelMessage}
+            </div>
+          )}
+
+          {['PENDING', 'CONFIRMED'].includes(tracking.status) && (
+            <div className="border-t border-gray-200 pt-4">
+              <button
+                type="button"
+                onClick={handleCancelOrder}
+                disabled={cancelling}
+                className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {cancelling ? 'Cancelling Order...' : 'Cancel Order'}
+              </button>
+              <p className="mt-2 text-xs text-gray-500">
+                Customer cancellation sirf PENDING ya CONFIRMED order ke liye available hai.
+              </p>
+            </div>
+          )}
 
           {tracking.status === 'CANCELLED' ? (
             <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-1">

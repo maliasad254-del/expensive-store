@@ -25,7 +25,7 @@ import {
   handleAdminUpdateOrderStatus,
   handleAdminUploadImage
 } from './routes/admin';
-import { handlePlaceCodOrder } from './routes/orders';
+import { handleCustomerCancelOrder, handlePlaceCodOrder } from './routes/orders';
 import {
   handleGetProduct,
   handleGetStorefront,
@@ -72,6 +72,9 @@ export default {
       }
       if (method === 'POST' && path === '/api/orders/track') {
         return await handleTrackOrder(request, env);
+      }
+      if (method === 'POST' && path === '/api/orders/cancel') {
+        return await handleCustomerCancelOrder(request, env);
       }
       if (method === 'POST' && path === '/api/price-alerts') {
         return await handleSubscribePriceDrop(request, env);

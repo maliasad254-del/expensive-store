@@ -254,3 +254,78 @@ export async function handlePlaceCodOrder(request: Request, env: Env): Promise<R
     201
   );
 }
+
+
+export async function handleCustomerCancelOrder(request: Request, env: Env): Promise<Response> {
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return errorResponse('Invalid JSON payload.', 400);
+  }
+
+  const orderNumber = sanitizeText(body.orderNumber, 40).toUpperCase();
+  const mobile = normalizePakistanMobile(sanitizeText(body.mobileNumber, 24));
+
+  if (!orderNumber || !mobile) {
+    return errorResponse('Enter both a valid Order ID and Pakistani mobile number (03XXXXXXXXX).', 400);
+  }
+
+  const order = await env.DB.prepare(
+    `SELECT status FROM orders
+     WHERE order_number = ? AND mobile_number = ?
+     LIMIT 1`
+  )
+    .bind(orderNumber, mobile)
+    .first<{ status: string }>();
+
+  if (!order) {
+    return errorResponse('No matching order found. Please verify Order ID and mobile number.', 404);
+  }
+
+  if (!['PENDING', 'CONFIRMED'].includes(order.status)) {
+    return errorResponse(
+      `This order cannot be cancelled because its current status is ${order.status}.`,
+      409
+    );
+  }
+
+  const now = Date.now();
+  const results = await env.DB.batch([
+    env.DB.prepare(
+      `UPDATE orders
+       SET status = 'CANCELLED', updated_at = ?
+       WHERE order_number = ? AND mobile_number = ?
+         AND status IN ('PENDING', 'CONFIRMED')`
+    ).bind(now, orderNumber, mobile),
+
+    env.DB.prepare(
+      `INSERT INTO order_status_history (order_number, status, note, created_at)
+       SELECT ?, 'CANCELLED', 'Customer requested order cancellation.', ?
+       WHERE changes() = 1`
+    ).bind(orderNumber, now),
+
+    env.DB.prepare(
+      `UPDATE products
+       SET stock_quantity = stock_quantity + (
+         SELECT COALESCE(SUM(quantity), 0)
+         FROM order_items
+         WHERE order_items.product_id = products.id
+           AND order_items.order_number = ?
+       )
+       WHERE id IN (
+         SELECT product_id FROM order_items WHERE order_number = ?
+       )
+       AND changes() = 1`
+    ).bind(orderNumber, orderNumber)
+  ]);
+
+  if (results[0].meta.changes !== 1) {
+    return errorResponse(
+      'Order status was changed by another request. Please track your order again.',
+      409
+    );
+  }
+
+  return jsonResponse({ ok: true, status: 'CANCELLED' });
+}
