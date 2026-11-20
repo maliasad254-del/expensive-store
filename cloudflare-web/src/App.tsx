@@ -19,6 +19,7 @@ import {
   ShopAllPage
 } from './pages/CatalogPages';
 import { HomePage } from './pages/HomePage';
+import { MyOrdersPage } from './pages/MyOrdersPage';
 import { InfoPage } from './pages/InfoPage';
 
 function ScrollToTop() {
@@ -50,6 +51,7 @@ export default function App() {
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/order-confirmation/:orderNumber" element={<OrderConfirmationPage />} />
                 <Route path="/track-order" element={<TrackOrderPage />} />
+                <Route path="/my-orders" element={<MyOrdersPage />} />
                 <Route path="/about" element={<InfoPage type="about" />} />
                 <Route path="/contact" element={<InfoPage type="contact" />} />
                 <Route path="/faq" element={<InfoPage type="faq" />} />

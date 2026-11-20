@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, Copy, MessageCircle, Minus, Plus, Search, ShoppingCart, Trash2, Truck } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useStore } from '../context/StoreContext';
 import { api } from '../lib/api';
+import { saveOrder } from '../lib/myOrders';
 import { buildWhatsAppUrl, formatPkr, normalizePakistanMobileClient } from '../lib/pkr';
 import { OrderItemSnapshot, OrderRecord, OrderStatus, TrackedOrder } from '../types/store';
 
@@ -214,6 +215,7 @@ export function CheckoutPage() {
         idempotencyKey,
         items: selectedItems.map((i) => ({ productId: i.product.id, quantity: i.quantity }))
       });
+      saveOrder(res.order, res.items);
       removeSelectedItems();
       await refreshStorefront();
       navigate(`/order-confirmation/${encodeURIComponent(res.order.order_number)}`, {
@@ -424,8 +426,9 @@ export function OrderConfirmationPage() {
 }
 
 export function TrackOrderPage() {
-  const [orderNumber, setOrderNumber] = useState('');
-  const [mobileNumber, setMobileNumber] = useState('');
+  const [searchParams] = useSearchParams();
+  const [orderNumber, setOrderNumber] = useState(() => searchParams.get('order') ?? '');
+  const [mobileNumber, setMobileNumber] = useState(() => searchParams.get('mobile') ?? '');
   const [tracking, setTracking] = useState<TrackedOrder | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

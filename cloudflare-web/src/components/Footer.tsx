@@ -38,6 +38,7 @@ export function Footer() {
             <li><Link to="/categories" className="hover:text-orange-accent">Categories</Link></li>
             <li><Link to="/search" className="hover:text-orange-accent">Search Products</Link></li>
             <li><Link to="/track-order" className="hover:text-orange-accent">Track Order</Link></li>
+            <li><Link to="/my-orders" className="hover:text-orange-accent">My Orders</Link></li>
           </ul>
         </div>
 

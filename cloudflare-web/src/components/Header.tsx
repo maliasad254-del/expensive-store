@@ -72,6 +72,7 @@ export function Header() {
           <Link to="/shop" className="hover:text-navy">Shop All</Link>
           <Link to="/categories" className="hover:text-navy">Categories</Link>
           <Link to="/track-order" className="hover:text-navy">Track Order</Link>
+          <Link to="/my-orders" className="hover:text-navy">My Orders</Link>
           <Link to="/contact" className="hover:text-navy">Contact</Link>
         </nav>
 
@@ -136,6 +137,7 @@ export function Header() {
             <Link to="/shop" onClick={() => setMobileMenuOpen(false)} className="p-2.5 rounded-lg bg-gray-50 text-navy">Shop All</Link>
             <Link to="/categories" onClick={() => setMobileMenuOpen(false)} className="p-2.5 rounded-lg bg-gray-50 text-navy">Categories</Link>
             <Link to="/track-order" onClick={() => setMobileMenuOpen(false)} className="p-2.5 rounded-lg bg-gray-50 text-navy">Track Order</Link>
+            <Link to="/my-orders" onClick={() => setMobileMenuOpen(false)} className="p-2.5 rounded-lg bg-gray-50 text-navy">My Orders</Link>
             <Link to="/about" onClick={() => setMobileMenuOpen(false)} className="p-2.5 rounded-lg bg-gray-50 text-navy">About Us</Link>
             <Link to="/contact" onClick={() => setMobileMenuOpen(false)} className="p-2.5 rounded-lg bg-gray-50 text-navy">Contact Us</Link>
           </div>
